@@ -50,7 +50,7 @@ class Database
         $insertSql = "INSERT INTO users (name, surname, email) VALUES (?,?,?)";
         $query = $this->mysqlconnection->prepare($insertSql);
         if ($query){
-            $query->bind_param('sss',$user->name,$user->surname,$user->email);
+            $query->bind_param('sss',$userDetails->name,$userDetails->surname,$userDetails->email);
             $query->execute();
             return $query;
         } else {
