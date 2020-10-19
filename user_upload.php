@@ -202,9 +202,8 @@ function parseCsvAndInsert($file,$dbconfig) {
         break;
         case "--dry_run":
             $filename = isset($arguments[3]) ? $arguments[3] : "";
-            echo $filename;
             if(count($arguments) === 4 AND $arguments[1] === "--dry_run" AND $arguments[2] === "--file") {
-                dryRunCSV($fileName);
+                dryRunCSV($filename);
             } else {
                 echo "Invalid command";
             }
