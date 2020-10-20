@@ -33,139 +33,51 @@ function createTble($dbconfig)
     }
 }
 /**
- * Checks the condition for creating the table
- * @param array $arguments
- * @return array $dbconfig
- */
-function checkAllConditionsCreateTable($arguments){
-    $check = array();
-    //echo count($arguments);
-    if(count($arguments) === 8) {
-
-        for ($i=2; $i < count($arguments); $i++) { 
-            if(strpos($arguments[$i], '-') !== false) {
-                $check[$arguments[$i]] = $arguments[$i + 1];
-            }
-        }
-            foreach ($check as $key => $val) {
-                if ($key === "-u") {
-                    $uname = $val;
-                } else if ($key === "-p") {
-                    $passwd = $val;
-                } else if ($key === "-h") {
-                    $hostname = $val;
-                }
-            }
-            $dbconfig  = array( "hostname" => $hostname,"uname" => $uname,"passwd" => $passwd);
-        } else {
-            return "Invalid command. Use --help";
-        }
-        return $dbconfig;
-}
-/**
- * Checks the condition for inserting in the table
+ * Checks the condition for inserting or creating table in the table
  * @param array $arguments
  * @return array $dbconfig Database config
  */
-function checkAllConditionsInsertTable($arguments) {
+function checkAllConditions($arguments,$givenOptions) {
     $check = array();
     //echo count($arguments);
-    if(count($arguments) === 9) {
 
-        for ($i=2; $i < count($arguments); $i++) { 
-            if(strpos($arguments[$i], '-') !== false) {
-                $check[$arguments[$i]] = $arguments[$i + 1];
+        if(array_key_exists("u",$givenOptions)){
+            if(isset($givenOptions['u'])){
+                $uname = $givenOptions['u'];
+            } else {
+                return null;
             }
+           
         }
-            foreach ($check as $key => $val) {
-                if ($key === "-u") {
-                    $uname = $val;
-                } else if ($key === "-p") {
-                    $passwd = $val;
-                } else if ($key === "-h") {
-                    $hostname = $val;
-                }
+        if(array_key_exists("p",$givenOptions)){
+            if(isset($givenOptions['p'])){
+                $passwd = $givenOptions['p'];
+            } else {
+                return null;
             }
-            $dbconfig  = array( "hostname" => $hostname,"uname" => $uname,"passwd" => $passwd);
-        } else {
-            return "Invalid command. Use --help";
+            
         }
+        if(array_key_exists("h",$givenOptions)){
+            if(isset($givenOptions['h'])){
+                $hostname = $givenOptions['h'];
+            } else {
+                return null;
+            }
+           
+        }
+        $dbconfig  = array( "hostname" => $hostname,"uname" => $uname,"passwd" => $passwd);
         return $dbconfig;
 }
 /**
- * Checks the condition for inserting in the table
- * @param String $file
- * @param array $dbconfig
- * @return array $dbconfig  Database config
- */
-function parseCsvAndInsert($file,$dbconfig) {
-   // $headers = array();
-   $affectedRows = 0;
-   $insertedOutput = "";
-   $error = "";
-    if (file_exists($file) && is_readable($file)) {
-        $userCsv = array_map("str_getcsv", file($file)); 
-        $header = array_shift($userCsv);
-        $headerTrimmed = array_map("trim", $header);
-        foreach ($userCsv as $i=>$row) {
-            $userCsv[$i] = array_combine($headerTrimmed, $row);
-        }
-        
-        $Database = new Database($dbconfig);
-        $mysqlconnection = $Database->getmySqlConnection();
-       if($mysqlconnection->connect_errno == 0 && $Database->checkUserTable() === false){
-             createTble($dbconfig);
-        }
-        if ($mysqlconnection->connect_errno == 0) {
-            if ($userCsv) {
-                $UserInfoVal = array();
-                for ($i=0; $i < count($userCsv) ; $i++) { 
-                    $name = $userCsv[$i]["name"];
-                    $surname = $userCsv[$i]["surname"];
-                    $email = $userCsv[$i]["email"];
-
-                    $UserInfoVal[$i] = new UserInfo($name, $surname, $email); 
-                    $result = $UserInfoVal[$i]->checkUsercsvToInsert($Database);
-
-                    if (gettype($result) === "string") {
-                        echo $result;
-                    } else {
-                        if (!empty($result->error)) {
-                            $error .=  $result->error."\n";
-                        }
-
-                        if($result->affected_rows == 1) {
-                            $affectedRows++;
-                        }
-                    }
-                }
-                if (intval($affectedRows) > 0) {
-                    $insertedOutput .= $affectedRows . " row";
-                    $insertedOutput .= (intval($affectedRows) > 1 ? "s " : " ");
-                    $insertedOutput .= "inserted. \n";
-                }
-
-                if (!empty($error)) {
-                    $insertedOutput .= $error;
-                }
-
-              
-            } else {
-                $insertedOutput = " $file file cannot not be loaded. Please try again.";
-            }
-            echo $insertedOutput;
-        }
-    } else {
-            throw new Exception($file . ' it is not readable or it is not accepted');
-    }         
-
-}
-/**
- * Prints the data without inserting in the table
+ * Prints or inserts the data without inserting in the table
  * @param String $fileName
+ * @param array $dbconfig
+ * @param Boolean $isDryrun
  */
- function dryRunCSV($fileName) {
-
+ function insertOrDisplayCSV($fileName,$dbconfig,$isDryRun) {
+    $affectedRows = 0;
+    $insertedOutput = "";
+    $error = "";
     if (file_exists($fileName) && is_readable($fileName)) {
         $userCsv = array_map("str_getcsv", file($fileName)); 
         $header = array_shift($userCsv);
@@ -174,15 +86,58 @@ function parseCsvAndInsert($file,$dbconfig) {
             $userCsv[$i] = array_combine($headerTrimmed, $row);
         }
         if ($userCsv) {
-            $UserInfoVal = array();
-            for ($i=0; $i < count($userCsv) ; $i++) { 
-                $name = $userCsv[$i]["name"];
-                $surname = $userCsv[$i]["surname"];
-                $email = $userCsv[$i]["email"];
-                $UserInfoVal[$i] = new UserInfo($name, $surname, $email); 
-                $UserInfoVal[$i]->displayUserForDryRun();
-            }
-                
+            if($isDryRun){
+                $UserInfoVal = array();
+                for ($i=0; $i < count($userCsv) ; $i++) { 
+                    $name = $userCsv[$i]["name"];
+                    $surname = $userCsv[$i]["surname"];
+                    $email = $userCsv[$i]["email"];
+                    $UserInfoVal[$i] = new UserInfo($name, $surname, $email); 
+                    $UserInfoVal[$i]->displayUserForDryRun();
+                }
+           } else if (is_array($dbconfig)) {
+                $Database = new Database($dbconfig);
+                $mysqlconnection = $Database->getmySqlConnection();
+                if($mysqlconnection->connect_errno == 0 && $Database->checkUserTable() === false){
+                        createTble($dbconfig);
+                    }
+                if ($mysqlconnection->connect_errno == 0) {
+                    $UserInfoVal = array();
+                    for ($i=0; $i < count($userCsv) ; $i++) { 
+                        $name = $userCsv[$i]["name"];
+                        $surname = $userCsv[$i]["surname"];
+                        $email = $userCsv[$i]["email"];
+    
+                        $UserInfoVal[$i] = new UserInfo($name, $surname, $email); 
+                        $result = $UserInfoVal[$i]->checkUsercsvToInsert($Database);
+    
+                        if (gettype($result) === "string") {
+                            echo $result;
+                        } else {
+                            if (!empty($result->error)) {
+                                $error .=  $result->error."\n";
+                            }
+    
+                            if($result->affected_rows == 1) {
+                                $affectedRows++;
+                            }
+                        }
+                    }
+                    if (intval($affectedRows) > 0) {
+                        $insertedOutput .= $affectedRows . " row";
+                        $insertedOutput .= (intval($affectedRows) > 1 ? "s " : " ");
+                        $insertedOutput .= "inserted. \n";
+                    }
+    
+                    if (!empty($error)) {
+                        $insertedOutput .= $error;
+                    }
+    
+                }
+            } else {
+                    $insertedOutput = " $fileName file cannot not be loaded. Please try again.";       
+            }  
+            echo $insertedOutput;
         } else {
             $displayOutput = "Error loading filename";
         }
@@ -198,37 +153,48 @@ function parseCsvAndInsert($file,$dbconfig) {
  function parseCommandLineArguments($arguments) {
     $option = isset($arguments[1]) ? $arguments[1] : "";
 
+    $short = "u:p:h:";
+
+    $longopts  = array("file:", "help", "dry_run", "create_table::");
+
+    $givenOptions = getopt($short,$longopts);
+
     switch ($option) {
         case "--create_table":
-            $dbconfig = checkAllConditions($arguments);
-            if(is_array($dbconfig)){
-                createTble($dbconfig);
-            } else {
-                echo $dbconfig;
+            if(count($arguments) === 8) {
+                $dbconfig = checkAllConditions($arguments,$givenOptions);
+                if(is_array($dbconfig)){
+                    createTble($dbconfig);
+                } else {
+                    echo $dbconfig;
+                }
+            }else {
+                echo "Invalid command. Use --help";
             }
             
         break;
         case "--file":
+            $isDryRun = false;
+            $dbconfig = "";
             $fileName = isset($arguments[2]) ? $arguments[2] : "";
-            $dbconfig = checkAllConditionsInsertTable($arguments);
-            if(count($arguments) === 4 AND $arguments[1] === "--file" AND $arguments[3] === "--dry_run") {
-                dryRunCSV($fileName);
+            if(count($arguments) === 4 && array_key_exists("dry_run",$givenOptions)){
+                $isDryRun = true;
             } else {
-                if (is_array($dbconfig)) {
-                    parseCsvAndInsert($fileName, $dbconfig);
+                if(count($arguments) === 9) {
+                    $dbconfig = checkAllConditions($arguments,$givenOptions);
                 } else {
-                    echo $dbconfig;
-                } 
+                    echo "Invalid command. Use --help";
+                }
             }
-                      
+            insertOrDisplayCSV($fileName,$dbconfig, $isDryRun);
         break;
         case "--help":
             echo helpCommands();
         break;
         case "--dry_run":
-            $filename = isset($arguments[3]) ? $arguments[3] : "";
-            if(count($arguments) === 4 AND $arguments[1] === "--dry_run" AND $arguments[2] === "--file") {
-                dryRunCSV($filename);
+            $fileName = isset($arguments[3]) ? $arguments[3] : "";
+            if(count($arguments) === 4 && array_key_exists("file",$givenOptions)) {
+                insertOrDisplayCSV($fileName,null, true);
             } else {
                 echo "Invalid command. Use --help";
             }
