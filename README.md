@@ -1,4 +1,5 @@
 
+# Script task - upload user
 Created a PHP script, that is executed from the command line, which accepts a CSV file as input
 (see command line directives below) and processes the CSV file. The parsed file data is to be
 inserted into a MySQL database. A CSV file is provided as part of this task that contains test
