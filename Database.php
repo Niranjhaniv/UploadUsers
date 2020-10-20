@@ -7,6 +7,12 @@ class Database
     private $dbname;
     private $mysqlconnection;
 
+    /**
+     * Sets the sql connection with the database.
+     * @param array $dbconfig
+     * return sqlconnection
+     */
+
     public function __construct($dbconfig) {
         
         $this->hostname = $dbconfig["hostname"];
@@ -20,11 +26,15 @@ class Database
             return $error;
         }
     }
-
+    /**
+     * Get the sql connection with the database.
+     */
     public function getmySqlConnection(){
         return $this->mysqlconnection;
     }
-
+    /**
+     * Creates the user table.
+     */
     public function createUserTable()
     {
         if ($this->checkUserTable() === false) {
@@ -38,13 +48,19 @@ class Database
             return "Table already exists! \n";
         }
     }
-
+    /**
+     * check if the user table exists.
+     */
     public function checkUserTable()
     {
         $checkUserTable = "SELECT * FROM users";
         return $this->mysqlconnection->query($checkUserTable);
     }
-
+    /**
+     * Inserts the user data into table.
+     * @param array $userDetails
+     * @return Object $query result 
+     */
     public function insertIntoUSerTable($userDetails){
 
         $insertSql = "INSERT INTO users (name, surname, email) VALUES (?,?,?)";

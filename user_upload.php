@@ -10,25 +10,33 @@
 
 function helpCommands() {
     $help  = "Manual of uploading csv files and option available \n";
-    $help .= "--file [csv file name] – The name of the CSV to be parsed\n";
+    $help .= "--file [csv file name] – The name of the CSV to be parsed Eg: --file <csvname>\n";
     $help .= "--create_table – this will cause the MySQL users table to be built\n";
     $help .= "--dry_run – To be used with the --file directive to run the script.\nNote that this option will not alter the database\n";
-    $help .= "-u – MySQL username\n";
-    $help .= "-p – MySQL password\n";
-    $help .= "-h – MySQL host\n";
+    $help .= "-u – MySQL username\n --create_table or --file -u <uname> -p <password> -h <hostname> ";
+    $help .= "-p – MySQL password\n --create_table or --file -u <uname> -p <password> -h <hostname> ";
+    $help .= "-h – MySQL host\n --create_table or --file -u <uname> -p <password> -h <hostname> ";
     $help .= "--help – help you with the manual available \n";
 
     return $help;
 }
- function createTble($dbconfig)
-    {
-        $Database = new Database($dbconfig);
-        $mysqlconnection = $Database->getmySqlConnection();
-        if ($mysqlconnection->connect_errno == 0) {
-            echo $Database->createUserTable();
-        }
-
+/**
+ * create the user database table
+ * @param array $dbconfig
+ */
+function createTble($dbconfig)
+{
+    $Database = new Database($dbconfig);
+    $mysqlconnection = $Database->getmySqlConnection();
+    if ($mysqlconnection->connect_errno == 0) {
+        echo $Database->createUserTable();
     }
+}
+/**
+ * Checks the condition for creating the table
+ * @param array $arguments
+ * @return array $dbconfig
+ */
 function checkAllConditionsCreateTable($arguments){
     $check = array();
     //echo count($arguments);
@@ -50,10 +58,15 @@ function checkAllConditionsCreateTable($arguments){
             }
             $dbconfig  = array( "hostname" => $hostname,"uname" => $uname,"passwd" => $passwd);
         } else {
-            return "Invalid command";
+            return "Invalid command. Use --help";
         }
         return $dbconfig;
 }
+/**
+ * Checks the condition for inserting in the table
+ * @param array $arguments
+ * @return array $dbconfig Database config
+ */
 function checkAllConditionsInsertTable($arguments) {
     $check = array();
     //echo count($arguments);
@@ -75,11 +88,16 @@ function checkAllConditionsInsertTable($arguments) {
             }
             $dbconfig  = array( "hostname" => $hostname,"uname" => $uname,"passwd" => $passwd);
         } else {
-            return "Invalid command";
+            return "Invalid command. Use --help";
         }
         return $dbconfig;
 }
-
+/**
+ * Checks the condition for inserting in the table
+ * @param String $file
+ * @param array $dbconfig
+ * @return array $dbconfig  Database config
+ */
 function parseCsvAndInsert($file,$dbconfig) {
    // $headers = array();
    $affectedRows = 0;
@@ -142,7 +160,10 @@ function parseCsvAndInsert($file,$dbconfig) {
     }         
 
 }
-
+/**
+ * Prints the data without inserting in the table
+ * @param String $fileName
+ */
  function dryRunCSV($fileName) {
 
     if (file_exists($fileName) && is_readable($fileName)) {
@@ -170,6 +191,10 @@ function parseCsvAndInsert($file,$dbconfig) {
     }  
 
 }
+/**
+ * Inputs from command line arguments
+ * @param array $arguments - Command line arguments passed
+ */
  function parseCommandLineArguments($arguments) {
     $option = isset($arguments[1]) ? $arguments[1] : "";
 
@@ -205,7 +230,7 @@ function parseCsvAndInsert($file,$dbconfig) {
             if(count($arguments) === 4 AND $arguments[1] === "--dry_run" AND $arguments[2] === "--file") {
                 dryRunCSV($filename);
             } else {
-                echo "Invalid command";
+                echo "Invalid command. Use --help";
             }
            
         break;
