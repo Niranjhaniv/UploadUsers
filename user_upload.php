@@ -58,6 +58,7 @@ function checkAllConditions($arguments,$givenOptions) {
             
         }
         if(array_key_exists("h",$givenOptions)){
+
             if(isset($givenOptions['h'])){
                 $hostname = $givenOptions['h'];
             } else {
@@ -152,15 +153,12 @@ function checkAllConditions($arguments,$givenOptions) {
  */
  function parseCommandLineArguments($arguments) {
     $option = isset($arguments[1]) ? $arguments[1] : "";
-
     $short = "u:p:h:";
-
     $longopts  = array("file:", "help", "dry_run", "create_table::");
-
     $givenOptions = getopt($short,$longopts);
-
-    switch ($option) {
-        case "--create_table":
+    $longOptions = array_keys(getopt("",$longopts));
+    switch ($longOptions[0]) {
+        case 'create_table':
             if(count($arguments) === 8) {
                 $dbconfig = checkAllConditions($arguments,$givenOptions);
                 if(is_array($dbconfig)){
@@ -173,11 +171,11 @@ function checkAllConditions($arguments,$givenOptions) {
             }
             
         break;
-        case "--file":
+        case 'file':
             $isDryRun = false;
             $dbconfig = "";
             $fileName = isset($arguments[2]) ? $arguments[2] : "";
-            if(count($arguments) === 4 && array_key_exists("dry_run",$givenOptions)){
+            if(count($arguments) === 4 && array_key_exists("dry_run", $givenOptions)){
                 $isDryRun = true;
             } else {
                 if(count($arguments) === 9) {
@@ -188,10 +186,10 @@ function checkAllConditions($arguments,$givenOptions) {
             }
             insertOrDisplayCSV($fileName,$dbconfig, $isDryRun);
         break;
-        case "--help":
+        case 'help':
             echo helpCommands();
         break;
-        case "--dry_run":
+        case 'dry_run':
             $fileName = isset($arguments[3]) ? $arguments[3] : "";
             if(count($arguments) === 4 && array_key_exists("file",$givenOptions)) {
                 insertOrDisplayCSV($fileName,null, true);
@@ -199,15 +197,6 @@ function checkAllConditions($arguments,$givenOptions) {
                 echo "Invalid command. Use --help";
             }
            
-        break;
-        case "-u":
-            echo "Invalid command, use with --create_table or --file";
-        break;
-        case "-p":
-            echo "Invalid command, use with --create_table or --file";
-        break;
-        case "-h":
-            echo "Invalid command, use with --create_table or --file";
         break;
         default:
         break;
